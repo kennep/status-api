@@ -4,6 +4,9 @@ on:
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0
 
+permissions:
+  contents: write
+
 name: Release
 env:
   PROGRAM_NAME: status-api
