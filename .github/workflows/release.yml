@@ -1,0 +1,82 @@
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0
+
+name: Release
+env:
+  PROGRAM_NAME: status-api
+
+jobs:
+  release_linux:
+    name: Release (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Set up Rust environment
+        uses: ./.github/actions/prepare-rust
+
+      - name: Run cargo build
+        run: cargo build --all --release
+
+      - name: Strip and rename binary
+        run: strip target/release/${PROGRAM_NAME} && mv target/release/${PROGRAM_NAME} target/release/${PROGRAM_NAME}_linux_amd64
+
+      - name: Release
+        uses: softprops/action-gh-release@c9b46fe7aad9f02afd89b12450b780f52dacfb2d
+        with:
+          files: |
+            target/release/${{ env.PROGRAM_NAME }}_linux_amd64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release_windows:
+    name: Release (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Set up Rust environment
+        uses: ./.github/actions/prepare-rust
+
+      - name: Run cargo build
+        run: cargo build --all --release
+
+      - name: Rename binary
+        run: ren target/release/${PROGRAM_NAME}.exe ${PROGRAM_NAME}_windows_amd64.exe
+
+      - name: Release
+        uses: softprops/action-gh-release@c9b46fe7aad9f02afd89b12450b780f52dacfb2d
+        with:
+          files: |
+            target/release/${{ env.PROGRAM_NAME }}_windows_amd64.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release_macos:
+    name: Release (macOS)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Set up Rust environment
+        uses: ./.github/actions/prepare-rust
+
+      - name: Run cargo build
+        run: cargo build --all --release
+ 
+      - name: Strip and rename binary
+        run: strip target/release/${PROGRAM_NAME} && mv target/release/${PROGRAM_NAME} target/release/${PROGRAM_NAME}_macos_amd64
+
+      - name: Release
+        uses: softprops/action-gh-release@c9b46fe7aad9f02afd89b12450b780f52dacfb2d
+        with:
+          files: |
+            target/release/${{ env.PROGRAM_NAME }}_macos_amd64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,11 @@
+[default.probes.hostname]
+command = "hostname"
+args = []
+
+[windows.probes.version]
+command = "cmd"
+args = ["/c", "ver"]
+
+[linux.probes.version]
+command = "uname"
+args = []
