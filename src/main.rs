@@ -35,14 +35,14 @@ struct Config {
 
 #[get("/probes/<name>")]
 async fn get_probe(name: String, config: &State<Config>, _limit: RocketGovernor<'_, RateLimitGuard>) -> (Status, &'static str) {
-    let maybe_command = get_command(name, config);
-    if let Some(command) = maybe_command {
-        match run_command(&command).await {
-            Ok(_) => (Status::Ok, "Ok"),
-            Err(_) => (Status::ServiceUnavailable, "Failed")
+    let maybe_probe = find_probe(name, config);
+    if let Some(probe) = maybe_probe {
+        match run_command(probe).await {
+            Ok(_) => (Status::Ok, "Ok\n"),
+            Err(_) => (Status::ServiceUnavailable, "Failed\n")
         }
     } else {
-        return (Status::NotFound, "Not found")
+        (Status::NotFound, "Not found\n")
     }
 }
 
@@ -51,7 +51,7 @@ async fn head_probe(name: String, config: &State<Config>, limit: RocketGovernor<
     get_probe(name, config, limit).await.0
 }
 
-fn get_command<'a>(name: String, config: &'a State<Config>) -> Option<&'a Probe> {
+fn find_probe(name: String, config: &State<Config>) -> Option<&Probe> {
     config.probes.iter().find(|(pname, _)| **pname == name).map(|(_, p)| p)
 }
 
@@ -59,7 +59,7 @@ async fn run_command(probe: &Probe) -> io::Result<()> {
     let args = probe.args.to_owned().unwrap_or(Vec::new());
 
     info!("Running command: {} {:?}", probe.command, args);
-    let output_result = Command::new(probe.command.to_owned())
+    let output_result = Command::new(&probe.command)
             .args(args)
             .output()
             .await;
