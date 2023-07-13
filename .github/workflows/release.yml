@@ -58,7 +58,7 @@ jobs:
         run: cargo build --all --release
 
       - name: Rename binary
-        run: ren target/release/${PROGRAM_NAME}.exe ${PROGRAM_NAME}_windows_amd64.exe
+        run: ren target/release/%PROGRAM_NAME%.exe %PROGRAM_NAME%_windows_amd64.exe
 
       - name: Release
         run:
