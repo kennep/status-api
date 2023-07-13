@@ -42,7 +42,7 @@ jobs:
 
       - name: Release
         run:
-          gh relase upload --clobber ${{ github.ref_name }} target/release/${{ env.PROGRAM_NAME }}_linux_amd64
+          gh release upload --clobber ${{ github.ref_name }} target/release/${{ env.PROGRAM_NAME }}_linux_amd64
 
   release_windows:
     name: Release (Windows)
@@ -62,7 +62,7 @@ jobs:
 
       - name: Release
         run:
-          gh relase upload --clobber ${{ github.ref_name }} target/release/${{ env.PROGRAM_NAME }}_windows_amd64.exe
+          gh release upload --clobber ${{ github.ref_name }} target/release/${{ env.PROGRAM_NAME }}_windows_amd64.exe
 
   release_macos:
     name: Release (macOS)
@@ -82,4 +82,4 @@ jobs:
 
       - name: Release
         run:
-          gh relase upload --clobber ${{ github.ref_name }} target/release/${{ env.PROGRAM_NAME }}_macos_amd64
+          gh release upload --clobber ${{ github.ref_name }} target/release/${{ env.PROGRAM_NAME }}_macos_amd64
