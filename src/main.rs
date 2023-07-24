@@ -1,25 +1,19 @@
 #[macro_use]
 extern crate rocket;
 
-use async_process::Command;
 use std::collections::HashMap;
 use std::io;
+use std::num::NonZeroU32;
+
+use async_process::Command;
 
 use rocket::http::Status;
 use rocket::serde::Deserialize;
 use rocket::{fairing::AdHoc, State};
 
-use rocket_governor::{Method, Quota, RocketGovernable, RocketGovernor};
+use governor::{DefaultKeyedRateLimiter, RateLimiter, Quota};
 
 use log::{info, warn};
-
-pub struct RateLimitGuard;
-
-impl<'r> RocketGovernable<'r> for RateLimitGuard {
-    fn quota(_method: Method, _route_name: &str) -> Quota {
-        Quota::per_minute(Self::nonzero(5u32))
-    }
-}
 
 #[derive(Deserialize)]
 #[serde(crate = "rocket::serde")]
@@ -31,6 +25,7 @@ struct Probe {
 #[derive(Deserialize)]
 #[serde(crate = "rocket::serde")]
 struct Config {
+    probe_reqs_per_min: Option<NonZeroU32>,
     probes: HashMap<String, Probe>,
 }
 
@@ -38,8 +33,12 @@ struct Config {
 async fn get_probe(
     name: String,
     config: &State<Config>,
-    _limit: RocketGovernor<'_, RateLimitGuard>,
+    ratelimits: &State<DefaultKeyedRateLimiter<String>>
 ) -> (Status, &'static str) {
+    if ratelimits.check_key(&name).is_err() {
+        return (Status::TooManyRequests, "Too many requests\n");
+    }
+
     let maybe_probe = find_probe(name, config);
     if let Some(probe) = maybe_probe {
         match run_command(probe).await {
@@ -55,9 +54,9 @@ async fn get_probe(
 async fn head_probe(
     name: String,
     config: &State<Config>,
-    limit: RocketGovernor<'_, RateLimitGuard>,
+    ratelimits: &State<DefaultKeyedRateLimiter<String>>    
 ) -> Status {
-    get_probe(name, config, limit).await.0
+    get_probe(name, config, ratelimits).await.0
 }
 
 fn find_probe(name: String, config: &State<Config>) -> Option<&Probe> {
@@ -95,7 +94,18 @@ async fn run_command(probe: &Probe) -> io::Result<()> {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build()
+    let rocket = rocket::build();
+    let figment = rocket.figment();
+    let config = figment.extract::<Config>().expect("config");
+    let quota = 
+        config.probe_reqs_per_min
+        .unwrap_or(NonZeroU32::new(5).unwrap());
+
+    let ratelimits: DefaultKeyedRateLimiter<String> 
+        = RateLimiter::keyed(Quota::per_minute(quota));
+
+    rocket
+        .manage(ratelimits)
         .mount("/", routes![get_probe, head_probe])
         .attach(AdHoc::config::<Config>())
 }

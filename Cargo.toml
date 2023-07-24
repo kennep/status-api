@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 async-process = "1.7.0"
+governor = "0.6.0"
 log = "0.4.19"
 rocket = "=0.5.0-rc.3"
-rocket-governor = "0.1.0-rc.4"
