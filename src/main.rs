@@ -11,7 +11,7 @@ use rocket::http::Status;
 use rocket::serde::Deserialize;
 use rocket::{fairing::AdHoc, State};
 
-use governor::{DefaultKeyedRateLimiter, RateLimiter, Quota};
+use governor::{DefaultKeyedRateLimiter, Quota, RateLimiter};
 
 use log::{info, warn};
 
@@ -33,7 +33,7 @@ struct Config {
 async fn get_probe(
     name: String,
     config: &State<Config>,
-    ratelimits: &State<DefaultKeyedRateLimiter<String>>
+    ratelimits: &State<DefaultKeyedRateLimiter<String>>,
 ) -> (Status, &'static str) {
     if ratelimits.check_key(&name).is_err() {
         return (Status::TooManyRequests, "Too many requests\n");
@@ -54,7 +54,7 @@ async fn get_probe(
 async fn head_probe(
     name: String,
     config: &State<Config>,
-    ratelimits: &State<DefaultKeyedRateLimiter<String>>    
+    ratelimits: &State<DefaultKeyedRateLimiter<String>>,
 ) -> Status {
     get_probe(name, config, ratelimits).await.0
 }
@@ -97,12 +97,11 @@ fn rocket() -> _ {
     let rocket = rocket::build();
     let figment = rocket.figment();
     let config = figment.extract::<Config>().expect("config");
-    let quota = 
-        config.probe_reqs_per_min
+    let quota = config
+        .probe_reqs_per_min
         .unwrap_or(NonZeroU32::new(5).unwrap());
 
-    let ratelimits: DefaultKeyedRateLimiter<String> 
-        = RateLimiter::keyed(Quota::per_minute(quota));
+    let ratelimits: DefaultKeyedRateLimiter<String> = RateLimiter::keyed(Quota::per_minute(quota));
 
     rocket
         .manage(ratelimits)
