@@ -64,23 +64,3 @@ jobs:
       - name: Release
         run:
           gh release upload --clobber ${{ github.ref_name }} target/release/${{ env.PROGRAM_NAME }}_windows_amd64.exe
-
-  release_macos:
-    name: Release (macOS)
-    runs-on: macos-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v3
-
-      - name: Set up Rust environment
-        uses: ./.github/actions/prepare-rust
-
-      - name: Run cargo build
-        run: cargo build --all --release
- 
-      - name: Strip and rename binary
-        run: strip target/release/${PROGRAM_NAME} && mv target/release/${PROGRAM_NAME} target/release/${PROGRAM_NAME}_macos_amd64
-
-      - name: Release
-        run:
-          gh release upload --clobber ${{ github.ref_name }} target/release/${{ env.PROGRAM_NAME }}_macos_amd64
