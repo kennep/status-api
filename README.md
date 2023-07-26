@@ -56,12 +56,15 @@ args = ["-c", "find /var/log/lastlog -mmin -60|grep lastlog"]
 ```
 
 Since the endpoints are unauthenticated, they intentionally do not expose any
-more information than OK/success, though the output and exit status of the command
+more information than success/failure, though the output and exit status of the command
 will be printed to the log.
 
 ### Rate limiting
 
-Since running external commands is a relatively heavywheight operation, the service rate limits requests. By default, the rate limit is a maximum of 5 requests per minute per probe, though this can be changed by setting the `probe_reqs_per_min` option
+Since running external commands is a relatively heavywheight operation, the service rate limits requests. If the rate of incoming requests exceeds the rate limit, then the service
+responds with `429 Too Many Requests`.
+
+By default, the rate limit is a maximum of 5 requests per minute per probe, though this can be changed by setting the `probe_reqs_per_min` option
 as in the following example:
 
 ```toml
